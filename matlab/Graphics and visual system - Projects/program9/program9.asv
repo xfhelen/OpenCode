@@ -1,0 +1,249 @@
+%program9
+% Image segmentation
+% (a). Develop a program to implement the Roberts, Prewitt,
+% Sobel, the Marr-Hildreth and the Canny edge detectors. Use the
+% image ‘building.tif’ to test your detectors. (For technique details
+% of Marr-Hildreth and Canny, please refer to pp.736-747 (3rd
+% edition, Gonzalez DIP) or MH-Canny.pdf at the same address of
+% the slides.)
+% (b). Develop a program to implement the Otsu’s method of
+% thresholding segmentation, and compare the results with the
+% global thresholding method using test image ‘polymersomes.tif.
+% (For technique details, please refer to pp.763-770 (3rd edition,
+% Gonzalez DIP), or Otsu.pdf at the same ftp address of slides.)
+
+clc;
+clear all;
+close all;
+%读取图像 
+I = imread('building.tif');
+figure;subplot(2,3,1);imshow(I);
+
+%前期处理图像
+pre1=im2double(I);
+[a,b,c]=ddencmp('den','wv',pre1);
+pre2=wdencmp('gbl',pre1,'sym4',2,a,b,c);
+pre3=medfilt2(pre2,[7 7]);
+pre4=imresize(pre3,0.25,'bicubic');
+[h,w] = size(pre4);
+ 
+%robert算子——边缘检测
+result1 = pre4;
+for i = 1:h-1
+    for j =1:w-1
+        result1(i,j) = sqrt((pre4(i+1,j) - pre4(i,j))^2+ (pre4(i,j+1) - pre4(i,j))^2);
+    end
+end
+subplot(2,3,2);imshow(result1);title('robert算子提取');
+
+%sobel算子——边缘检测
+result2 = pre4;
+for i = 2:h-1
+    for j =2:w-1
+        result2(i,j) = sqrt((pre4(i+1,j-1)+2*pre4(i+1,j)+pre4(i+1,j+1) - pre4(i-1,j-1)-2*pre4(i-1,j)-pre4(i-1,j+1))^2+ (pre4(i-1,j+1)+2*pre4(i,j+1)+pre4(i+1,j+1) - pre4(i-1,j-1)-2*pre4(i,j-1)-pre4(i+1,j-1))^2);
+    end
+end
+subplot(2,3,3);imshow(result2);title('sobel算子提取');
+
+%prewitt算子——边缘检测
+result3 = pre4;
+for i = 2:h-1
+    for j =2:w-1
+        result3(i,j) = sqrt((pre4(i+1,j-1)+pre4(i+1,j)+pre4(i+1,j+1) - pre4(i-1,j-1)-pre4(i-1,j)-pre4(i-1,j+1))^2+ (pre4(i-1,j+1)+pre4(i,j+1)+pre4(i+1,j+1) - pre4(i-1,j-1)-pre4(i,j-1)-pre4(i+1,j-1))^2);
+    end
+end
+subplot(2,3,4);imshow(result3);title('prewitt算子提取');
+
+%log算子——边缘检测
+log=[ 0 0  -1 0  0;
+      0 -1 -2 -1 0;
+     -1 -2 16 -2 -1;
+     0  -1 -2 -1 0;
+     0  0  -1 0  0];
+subplot(2,3,5);imshow(result4);title('log算子提取');
+
+% %canny算子——边缘检测
+% 
+% subplot(2,3,6);imshow(result5);title('canny算子提取');
+% 
+% 
+% %sobert、robert和prewitt算子检测图像边缘
+% esobel=edge(isuo,'sobel');
+% erob=edge(isuo,'roberts');
+% eprew=edge(isuo,'prewitt');
+% elog=edge(isuo,'log');
+% ecanny=edge(isuo,'canny');
+% subplot(2,3,2);
+% imshow(esobel);title('sobel算子提取');
+% subplot(2,3,3);
+% imshow(erob);title('roberts算子提取');
+% subplot(2,3,4);
+% imshow(eprew);title('prewitt算子提取');
+% subplot(2,3,5);
+% imshow(elog);title('log算子提取');
+% subplot(2,3,6);
+% imshow(ecanny);title('canny算子提取');
+%=====================================================================
+% clc;
+% clear all;
+% close all;
+%读取图像 
+I = imread('polymersomes.tif');
+[h,w] = size(I);
+figure;subplot(2,2,1);imshow(I);
+
+%全局阈值
+I=double(I);
+T=(min(I(:))+max(I(:)))/2;
+done=false;
+i=0;
+while ~done
+    r1=find(I<=T);
+    r2=find(I>=T);
+    Tnew=(mean(I(r1))+mean(I(r2)))/2;
+    done=abs(Tnew-T)<1;
+    T=Tnew;
+    i=i+1;
+end
+I(r1)=0;
+I(r2)=1;
+subplot(2,2,2);imshow(I);
+
+%Ostu阈值
+I =  imread('polymersomes.tif');
+level = graythresh(I);
+BW = im2bw(I,level);
+subplot(2,2,3); imshow(BW)
+
+
+
+
+% % %图像分割—Roberts
+% % result1 = I;
+% % for i = 2:h-1
+% %     for j = 2:w-1
+% %         a = I(i+1,j+1)-I(i,j);
+% %         b = I(i+1,j)-I(i,j+1);
+% %         result1(i,j) = sqrt(double(a*a+b*b));
+% %     end
+% % end
+% % subplot(2,4,2);imshow(result1);
+% grayPic=I; 
+% [m,n]=size(grayPic);
+% newGrayPic=grayPic;%为保留图像的边缘一个像素
+% robertsNum=0; %经roberts算子计算得到的每个像素的值
+% robertThreshold=0.5; %设定阈值
+% for j=1:m-1 %进行边界提取
+% for k=1:n-1
+% robertsNum = abs(grayPic(j,k)-grayPic(j+1,k+1)) + abs(grayPic(j+1,k)-grayPic(j,k+1));
+% if(robertsNum > robertThreshold)
+% newGrayPic(j,k)=255;
+% else
+% newGrayPic(j,k)=0;
+% end
+% end
+% end
+% subplot(2,4,2);imshow(newGrayPic);
+% title('roberts算子的处理结果')
+
+
+% %图像分割—Prewitt
+% result2 = I;
+% for i = 3:h-2
+%     for j = 3:w-2
+%         a = I(i+1,j+1)-I(i,j);
+%         b = I(i+1,j)-I(i,j+1);
+%         result2(i,j) = sqrt(double(a*a+b*b));
+%     end
+% end
+% subplot(2,4,3);imshow(result2);
+% grayPic=I;%转换成灰度图像
+% [m,n]=size(grayPic);
+% newGrayPic=grayPic;%为保留图像的边缘一个像素
+% PrewittNum=0;%经Prewitt算子计算得到的每个像素的值
+% PrewittThreshold=0.5;%设定阈值
+% for j=2:m-1 %进行边界提取
+% for k=2:n-1
+% PrewittNum=abs(grayPic(j-1,k+1)-grayPic(j+1,k+1)+grayPic(j-1,k)-grayPic(j+1,k)+grayPic(j-1,k-1)-grayPic(j+1,k-1))+abs(grayPic(j-1,k+1)+grayPic(j,k+1)+grayPic(j+1,k+1)-grayPic(j-1,k-1)-grayPic(j,k-1)-grayPic(j+1,k-1));
+% if(PrewittNum > PrewittThreshold)
+% newGrayPic(j,k)=255;
+% else
+% newGrayPic(j,k)=0;
+% end
+% end
+% end
+% subplot(2,4,3);imshow(newGrayPic);
+% title('Prewitt算子的处理结果')
+
+%图像分割—Sobel
+% grayPic=I;
+% [m,n]=size(grayPic);
+% newGrayPic=grayPic;%为保留图像的边缘一个像素
+% sobelNum=0;%经sobel算子计算得到的每个像素的值
+% sobelThreshold=0.5;%设定阈值
+% for j=2:m-1 %进行边界提取
+% for k=2:n-1
+% sobelNum=abs(grayPic(j-1,k+1)+2*grayPic(j,k+1)+grayPic(j+1,k+1)-grayPic(j-1,k-1)-2*grayPic(j,k-1)-grayPic(j+1,k-1))+abs(grayPic(j-1,k-1)+2*grayPic(j-1,k)+grayPic(j-1,k+1)-grayPic(j+1,k-1)-2*grayPic(j+1,k)-grayPic(j+1,k+1));
+% if(sobelNum > sobelThreshold)
+% newGrayPic(j,k)=255;
+% else
+% newGrayPic(j,k)=0;
+% end
+% end
+% end
+% subplot(2,4,4);imshow(newGrayPic);
+% title('Sobel算子的处理结果')
+
+%图像分割—Marr-Hildreth
+% m=11;
+% n=11;
+% sigma=1.4;
+% w=zeros(m,n);
+% h_m=(m-1)/2;
+% h_n=(n-1)/2;
+% for i=1:m
+%     for j=1:n
+%         y=i-h_m;
+%         x=j-h_n;
+%         w(i,j)=(1/(sigma*sigma))*((y*y+x*x)/(sigma*sigma)-2)*exp(-(y*y+x*x)/(2*sigma*sigma)); 
+%     end
+% end
+% w=w/sum(sum(w));    %归一化
+% 
+% imgn=imfilter(I,w,'replicate');
+% 
+% [m n]=size(I);
+% for i=2:m-1
+%     for j=2:n-1
+%         tmp(1)=sum(sum(imgn(i-1:i,j-1:j)));
+%         tmp(2)=sum(sum(imgn(i-1:i,j:j+1)));
+%         tmp(3)=sum(sum(imgn(i:i+1,j-1:j)));
+%         tmp(4)=sum(sum(imgn(i:i+1,j:j+1)));
+%         Ma=max(tmp);
+%         Mi=min(tmp);
+%         if Ma>0 && Mi<0
+%             imgn(i,j)=255;
+%         end
+%     end
+% end
+% subplot(2,4,5);imshow(imgn==255);title('Marr-Hildreth算子分割结果');
+
+%图像分割—Canny
+% I1 = imread('building.tif');
+% I2=edge(I1,'canny');
+% subplot(2,4,6);imshow(I2);title('canny算子分割结果');
+
+%b========================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
